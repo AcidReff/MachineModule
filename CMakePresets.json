@@ -1,0 +1,17 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "vs2022-x64",
+      "displayName": "Visual Studio 2022 x64",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": { "JUCE_DIR": "C:/JUCE" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "release", "configurePreset": "vs2022-x64", "configuration": "Release",
+      "targets": ["MachinedrumModule_VST3", "MachinedrumModule_Standalone", "md-smoke"] }
+  ]
+}

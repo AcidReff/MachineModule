@@ -1,0 +1,9 @@
+# Source provenance
+
+- **sd88me/mpc-vst-machinedrum** — https://github.com/sd88me/mpc-vst-machinedrum — AGPL-3.0-only. `engine/`, `tools/mdfw/`, `tools/mdmix/MixerRef`, kit parsing, and sample-file format come from the user's supplied checkout (README identifies v0.3.4). Local changes: portable machine-table search, owned firmware lifetime, MIDI panic method, reference interpreter execution, master coefficient execution and master DSP/reset support. The original supplied folder is unchanged.
+- **shnolk/monomodule** — https://github.com/shnolk/monomodule — AGPL-3.0. Original attribution in the firmware decoder and DSP harness is retained. Its JUCE/CMake Windows setup was used as a reference.
+- **sd88me/dsp56300** — https://github.com/sd88me/dsp56300 — GPL-3.0; checkout `26558e5401fa134a013eca8dbb8c5ecde837ec55` (`recomp-fixes`). Includes asmjit at `3577608cab0bc509f856ebf6e41b2f9d9f71acc4` (see its bundled license). Local `dsp.h` changes allow MSVC's member-pointer size and avoid an out-of-bounds member-pointer copy in recompiler metadata. Voice synthesis uses the reference interpreter; the master-effects DSP uses validated x64 JIT execution with interpreter initialization and fallback.
+- **joelanders/gearmulator-md-mm** — https://github.com/joelanders/gearmulator-md-mm — checkout `8cea0524a75435122c20b669ca114c9ac6509ba2`. Only its mc68k dependency is compiled, not its full-system hardware emulator. mc68k checkout `ace95b3d0a5a332db147244762dda65f9a010b9f` includes Musashi; see bundled source notices/licenses.
+- **JUCE 8.0.8** — https://github.com/juce-framework/JUCE — local `C:/JUCE` source, used under its AGPLv3 option. JUCE includes the VST3 wrapper/SDK and other third-party components; see `C:/JUCE/LICENSE.md` and its module notices.
+
+The new PC wrapper, loader adapters, build files and tests are supplied under AGPL-3.0-only. Elektron's firmware remains user-supplied and is neither embedded nor copied into the distribution folder.

@@ -1,0 +1,37 @@
+name: CMake
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - release/md-mm-public-alpha-20260826
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cmake-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-14, windows-2022]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release --parallel 3
+
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure
