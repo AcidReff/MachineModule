@@ -73,7 +73,7 @@ See [CPU validation](CPU-VALIDATION-0.4.3.md) for the processor routing A/B meas
 
 ## Voice JIT in 0.4.4
 
-Voice synthesis now uses native x64 JIT execution from c0remusic's DSP fork used by MD Drums. Voice blocks are limited to one DSP instruction because longer blocks produced different noise-machine output in comparison tests. This still avoids interpreting each instruction. The original firmware synthesis, master effects, control rate, voice budget, and stock/X.13 voice grouping are preserved.
+Voice synthesis now uses native x64 JIT execution . Voice blocks are limited to one DSP instruction because longer blocks produced different noise-machine output in comparison tests. This still avoids interpreting each instruction. The original firmware synthesis, master effects, control rate, voice budget, and stock/X.13 voice grouping are preserved.
 
 Common synthesis paths are compiled on the firmware loader thread before the engine becomes ready. Warm-up restores the initial voice memory and registers; it does not change the starting sound. ROM/RAM sample paths are not precompiled. Loading may take slightly longer, and previously unseen parameter-dependent code can still compile during playback.
 
