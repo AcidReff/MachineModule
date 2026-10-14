@@ -167,8 +167,9 @@ namespace md::engine
 		auto& cpu = *m_cpu;
 		uint32_t sp = kStackTop;
 		// C calling convention: arguments pushed right to left, then the return address
-		std::vector<uint32_t> args(_args);
-		for(auto it = args.rbegin(); it != args.rend(); ++it) { sp -= 4; poke32(sp, *it); }
+		// initializer_list already owns a contiguous argument range for this call;
+		// reverse it directly instead of allocating on the audio thread.
+		for(auto it = _args.end(); it != _args.begin();) { --it; sp -= 4; poke32(sp, *it); }
 		sp -= 4; poke32(sp, kReturnSentinel);
 		cpu.setAReg(7, sp);
 		cpu.setPC(_address);

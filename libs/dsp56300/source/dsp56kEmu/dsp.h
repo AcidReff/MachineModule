@@ -318,7 +318,12 @@ namespace dsp56k
 
 		ASMJIT_FORCE_INLINE void execInterpreter() noexcept
 		{
-			m_interruptFunc(this);
+			// The usual peripheral callback immediately returns until its target
+			// clock. Avoid that indirect call on every interpreted instruction.
+			// Interrupt dispatch always runs; due peripherals keep the same path.
+			if(m_interruptFunc != m_execPeripheralsFunc
+				|| perif[0]->getTargetClock() <= m_instructions)
+				m_interruptFunc(this);
 
 #if DSP56300_DEBUGGER
 			if(m_debugger)

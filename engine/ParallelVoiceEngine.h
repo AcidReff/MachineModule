@@ -38,6 +38,7 @@ namespace md::engine
 		// Run _fn(group) once on each worker thread (group 1..n-1), on its next block: set its name, priority and
 		// core there (real-time priority only once booted, like the caller's own thread).
 		void tuneWorkers(std::function<void(int)> _fn);
+		void warmUp(const std::vector<uint8_t>& osImage) { for(auto& voice : m_groups) voice->warmUp(osImage); }
 
 		void setSlot(int _voice, const uint32_t* _words, int _count = kSlotWords);
 		bool renderBlock(Block& _out);

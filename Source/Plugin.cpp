@@ -178,6 +178,18 @@ public:
         }
         auto it=midi.cbegin();
         const float gain=state.getRawParameterValue("gain")->load();
+        // Bus layouts are fixed for this callback. Resolve their buffers once,
+        // rather than constructing 19 temporary bus views for every sample.
+        std::array<float*,22> outputPointers{};
+        std::array<int,22> outputIndices{};
+        int outputCount=0;
+        for(int bus=0;bus<getBusCount(false);++bus) {
+            auto b=getBusBuffer(audio,false,bus);
+            for(int c=0;c<b.getNumChannels();++c) {
+                outputPointers[outputCount]=b.getWritePointer(c);
+                outputIndices[outputCount++]=bus<3?2*bus+c:bus+3;
+            }
+        }
         for(int s=0;s<audio.getNumSamples();++s) {
             while(it!=midi.cend() && (*it).samplePosition<=s) {
                 const auto msg=(*it).getMessage();
@@ -221,13 +233,9 @@ public:
                 for(int t=0;t<16;++t)next[6+t]=(float)md::engine::Mixer::solo(output.tracks[t][cursor],host.mixerInput(t).mix[1])/8388608.0f;
                 ++cursor;phase-=1.0;
             }
-            for(int bus=0;bus<getBusCount(false);++bus) {
-                auto b=getBusBuffer(audio,false,bus);
-                for(int c=0;c<b.getNumChannels();++c)
-                {
-                    int index=bus<3?2*bus+c:bus+3;
-                    b.setSample(c,s,jlimit(-1.0f,1.0f,gain*(previous[index]+(float)phase*(next[index]-previous[index]))));
-                }
+            for(int c=0;c<outputCount;++c) {
+                const int index=outputIndices[c];
+                outputPointers[c][s]=jlimit(-1.0f,1.0f,gain*(previous[index]+(float)phase*(next[index]-previous[index])));
             }
         }
         midi.clear();
@@ -243,7 +251,8 @@ private:
             try {
                 auto fw=pc::loadFirmware(std::filesystem::path(path.toWideCharPointer()));
                 auto freshEffects=std::make_unique<md::engine::MasterFx>(fw.firmware,fw.os);
-                auto fresh=std::make_unique<md::engine::ParallelEngine>(fw.firmware,std::move(fw.os),fw.firmware.x13?1:3);
+                auto fresh=std::make_unique<md::engine::ParallelEngine>(fw.firmware,fw.os,fw.firmware.x13?1:3);
+                fresh->voices().warmUp(fw.os);
                 const bool rom=pc::loadSamples(fresh->voices(),std::filesystem::path(path.toWideCharPointer()).parent_path()/"ROM_SAMPLES.bin");
                 auto list=fresh->os().machines();
                 if(!preserveParameters.exchange(true)) {

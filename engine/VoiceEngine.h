@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "../tools/mdfw/Firmware.h"
 
@@ -26,11 +27,13 @@ namespace md::engine
 
 		using Block = std::array<std::array<int32_t, kBlockFrames>, kVoices>;	// [voice][frame], 24-bit signed
 
-		explicit VoiceEngine(const fw::Firmware& _fw);
+		explicit VoiceEngine(const fw::Firmware& _fw, bool useJit = true);
 		~VoiceEngine();
 
 		// Load the program, run its own init, install the harness. Throws on failure.
 		void reset();
+		// Loader-thread precompilation; restores the initial voice memory and registers.
+		void warmUp(const std::vector<uint8_t>& osImage);
 
 		// Write a voice slot (up to kSlotWords words) for the next block. Word 0 is the trigger/machine
 		// code: non-zero only on the block the voice is (re)triggered; the DSP clears it.
@@ -67,5 +70,6 @@ namespace md::engine
 		int m_lastActive = 0;
 		std::array<uint32_t, kVoices> m_voiceInstr{};
 		std::string m_fault;
+		bool m_useJit = true;
 	};
 }

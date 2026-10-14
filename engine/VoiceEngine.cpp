@@ -1,5 +1,6 @@
 // Harness structure adapted from shnolk/monomodule src/core/dsp/DspEngine.cpp (AGPL-3.0).
 #include "VoiceEngine.h"
+#include "MachineRunner.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -47,14 +48,13 @@ namespace md::engine
 		constexpr uint64_t kMaxInstrBlock = 20'000'000;
 	}
 
-	VoiceEngine::VoiceEngine(const fw::Firmware& _fw) : m_fw(_fw)
+	VoiceEngine::VoiceEngine(const fw::Firmware& _fw, bool useJit) : m_fw(_fw), m_useJit(useJit && std::getenv("MACHINEMODULE_VOICE_INTERPRETER")==nullptr)
 	{
 		m_validator = std::make_unique<DefaultMemoryValidator>();
 		m_mem = std::make_unique<Memory>(*m_validator, kSizeP, kSizeXY, kBridge);
 		m_periphX = std::make_unique<Peripherals56303>();
 		m_periphY = std::make_unique<PeripheralsNop>();
 		m_dsp = std::make_unique<DSP>(*m_mem, m_periphX.get(), m_periphY.get());
-		m_dsp->setInterpreterEnabled(true);
 		if constexpr(g_useJIT)
 		{
 			// As gearmulator-md-mm configures its DSPs: the program keeps code in the vector area.
@@ -62,15 +62,16 @@ namespace md::engine
 			cfg.dynamicFastInterrupts = true;
 			cfg.aguSupportBitreverse = true;
 			cfg.linkJitBlocks = false;
+			// Longer blocks currently diverge from the interpreter on noise machines.
+			// Single-instruction blocks retain native code execution with exact state updates.
+			cfg.maxInstructionsPerBlock = 1;
+			cfg.maxDoIterations = 4;
 			m_dsp->getJit().setConfig(cfg);
 		}
 		else
 		{
-			// No JIT on this target (32-bit ARM, the Force): exec() falls back to the interpreter, whose
-			// per-address opcode cache this fork only builds on request (it costs ~48 bytes x P size, moot
-			// when the JIT is the normal path). Without this, the cache is empty and exec() dereferences a
-			// null instruction-handler pointer on the very first instruction.
-			m_dsp->setInterpreterEnabled(true);
+			// The interpreter lazily allocates its opcode cache on targets without JIT.
+			m_useJit = false;
 		}
 		m_periphX->getHI08().setRXRateLimit(0);
 		m_periphX->getHI08().setTransmitDataAlwaysEmpty(true);
@@ -92,6 +93,43 @@ namespace md::engine
 	}
 
 	VoiceEngine::~VoiceEngine() = default;
+
+	void VoiceEngine::warmUp(const std::vector<uint8_t>& osImage)
+	{
+		if(!m_useJit) return;
+		// Keep compiled blocks, but discard the warm-up's musical state. This uses the
+		// snapshot approach from c0remusic/md-drums; no firmware data is persisted.
+		const auto sizeP = Memory::calcPMemSize(kSizeP, kSizeXY, kBridge);
+		const auto sizeXY = Memory::calcXYMemSize(kSizeXY, kBridge);
+		auto* p = m_mem->getMemAreaPtr(MemArea_P);
+		auto* x = m_mem->getMemAreaPtr(MemArea_X);
+		auto* y = m_mem->getMemAreaPtr(MemArea_Y);
+		const std::vector<TWord> savedP(p,p+sizeP), savedX(x,x+sizeXY), savedY(y,y+sizeXY);
+		const auto regs = m_dsp->regs();
+		MachineRunner coefficients(osImage);
+		for(const auto& machine : coefficients.machines()) {
+			if(machine.id>=80) continue; // ROM/RAM require user sample data.
+			for(bool tonal : {false,true}) {
+				if(tonal && !m_fw.x13) continue;
+				coefficients.setTonal(0,tonal);
+				uint16_t params[24]{}; uint32_t words[32]{};
+				for(int i=0;i<8;++i) params[i]=uint16_t(machine.defaults[i])<<7;
+				const int count=coefficients.compute(machine.id,params,words,32,true,0);
+				if(count<0) throw std::runtime_error("Voice warm-up coefficient failure");
+				words[0]=uint32_t(machine.id)+1;
+				setSlot(0,words,std::clamp(count,1,32));
+				Block output{};
+				for(int block=0;block<4;++block)
+					if(!renderBlock(output)) throw std::runtime_error("Voice warm-up: "+m_fault);
+			}
+		}
+		std::copy(savedP.begin(),savedP.end(),p);
+		std::copy(savedX.begin(),savedX.end(),x);
+		std::copy(savedY.begin(),savedY.end(),y);
+		m_dsp->regs()=regs;
+		auto& hi=m_periphX->getHI08(); hi.clearRX(); while(hi.hasTX()) hi.readTX();
+		m_lastInstructions=0; m_lastActive=0; m_voiceInstr.fill(0); m_fault.clear();
+	}
 
 	void VoiceEngine::loadImage(const fw::DspImage& _img)
 	{
@@ -232,9 +270,11 @@ namespace md::engine
 		m_dsp->setPC(kEntry);
 
 		// Init runs into the block loop; the first (silent) block comes out and the DSP then waits for "go".
+
 		Block first;
 		if(!readBlock(first, kMaxInstrInit))
 			throw std::runtime_error("voice DSP init did not complete: " + m_fault);
+
 		while(hi.hasTX())
 			hi.readTX();
 	}
@@ -252,17 +292,18 @@ namespace md::engine
 		const auto start = m_dsp->getInstructionCounter();
 		static const bool debug = std::getenv("MDV_DEBUG") != nullptr;
 		uint64_t nextReport = start + 5'000'000;
+		uint64_t dispatches = 0;
 		while(hi.txData().size() < _words)
 		{
-			// The upstream JIT stalls on this firmware's host-port polling loops.
-			m_dsp->execInterpreter();
+			if(m_useJit) m_dsp->execJit();
+			else m_dsp->execInterpreter();
 			if(debug && m_dsp->getInstructionCounter() > nextReport)
 			{
 				std::fprintf(stderr, "  PC=$%06x instr=%llu tx=%zu\n", m_dsp->getPC().toWord(),
 					static_cast<unsigned long long>(m_dsp->getInstructionCounter() - start), hi.txData().size());
 				nextReport += 5'000'000;
 			}
-			if(m_dsp->getInstructionCounter() - start > _maxInstructions)
+			if(++dispatches > _maxInstructions || m_dsp->getInstructionCounter() - start > _maxInstructions)
 			{
 				std::ostringstream o;
 				o << "instruction budget exceeded at PC=$" << std::hex << m_dsp->getPC().toWord() << std::dec

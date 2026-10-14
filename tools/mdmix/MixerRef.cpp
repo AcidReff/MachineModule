@@ -35,7 +35,6 @@ namespace md::mixref
 		m_periphX = std::make_unique<Peripherals56303>();
 		m_periphY = std::make_unique<PeripheralsNop>();
 		m_dsp = std::make_unique<DSP>(*m_mem, m_periphX.get(), m_periphY.get());
-		m_dsp->setInterpreterEnabled(true);
 		for(auto* essi : {&m_periphX->getEssi0(), &m_periphX->getEssi1()})
 		{
 			essi->setReadRxCallback([](uint64_t& _i, Audio::RxFrame& _f) { _f.resize(2); _f[0] = {}; _f[1] = {}; ++_i; });
@@ -99,15 +98,13 @@ namespace md::mixref
 	bool MixerRef::runUntil(const uint32_t _pc, const uint64_t _max)
 	{
 		const auto start = m_dsp->getInstructionCounter();
+		uint64_t dispatches = 0;
 		while(m_dsp->getPC().toWord() != _pc)
 		{
 			if(m_useJit) {
 				m_dsp->execJit();
-				// A code-generation failure leaves PC unchanged. Continue with
-				// the reference interpreter rather than hanging the audio thread.
-				if(m_dsp->getJit().hasFailed())m_useJit=false;
 			} else m_dsp->execInterpreter();
-			if(m_dsp->getInstructionCounter() - start > _max)
+			if(++dispatches > _max || m_dsp->getInstructionCounter() - start > _max)
 			{
 				std::ostringstream o;
 				o << "instruction budget exceeded at PC=$" << std::hex << m_dsp->getPC().toWord();

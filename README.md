@@ -1,16 +1,10 @@
 # MachineModule
 
-**By AcidReff · Version 0.4.2 · Windows x64 · Standalone / VST3**
-
-![MachineModule interface](docs/MachineModule.png)
-
-Download the Windows ZIP from this repository's **Releases** page when available. Extract it, then run `Standalone/MachineModule.exe`, or copy the complete `VST3/MachineModule.vst3` folder to your VST3 directory. This source repository does not include compiled binaries or Elektron firmware.
-
 Windows x64 standalone instrument and VST3, ported from sd88me/mpc-vst-machinedrum. The Machinedrum sound engine is retained; a new JUCE desktop interface replaces the MPC wrapper. The supplied Monomodule project informed the Visual Studio/JUCE build setup. Neither original source folder is required to build this copy.
 
 ## Run
 
-In the release ZIP, open `Standalone/MachineModule.exe`. When building from source, open `dist/Standalone/Release/MachineModule.exe`.
+Open `dist/Standalone/Release/MachineModule.exe`.
 
 1. Select **FIRMWARE** and choose your Machinedrum **OS 1.63 or UW X.13** `.syx` update or **8 MB `.bin` flash image**. Loading happens in the background. Your firmware path is remembered in `%APPDATA%/MachinedrumModulePC/firmware-path.txt` and in saved plugin state. Firmware is not embedded in the executable or projects.
 2. In the standalone window, use **Options > Audio/MIDI Settings** to select your output device and enable your MIDI input. Start at 44.1 kHz and a 512-sample buffer. This build supports Windows Audio/DirectSound; the Steinberg ASIO SDK is not included.
@@ -69,9 +63,27 @@ To hear it, select RND for SHP1, set SHMIX to 0, choose the destination track an
 
 `md-lfo-smoke` reproduced the stuck destination before the fix and checks both shape slots, FREE/TRIG/HOLD and zero depth on tracks 1, 8 and 16 with OS 1.63 and X.13. The previous source, standalone and VST3 are in `../MachineModule-backups/0.4.1-before-random-lfo-fix`.
 
+## CPU optimization in 0.4.3
+
+The DSP interpreter skips its indirect peripheral callback only when that callback would immediately return because its scheduled clock has not arrived. Pending interrupt handlers and due peripherals still execute through the original path. Firmware-call argument setup no longer allocates a temporary vector, and the plugin resolves output-bus buffers once per audio callback instead of once per sample. Synthesis, control rate, effects and voice budgets are unchanged.
+
+`md-render-benchmark` measures the current stock/X.13 engine with six and sixteen voices, the original master effects, three trials and audio hashes. Each trial renders 3,000 blocks (2,176.87 ms of audio); process CPU includes all voice threads. Compare the reference and optimized logs for measurements on the same PC. The previous 0.4.2 source, standalone and complete VST3 are in `../MachineModule-backups/0.4.2-before-cpu-optimization-2`.
+
+See [CPU validation](CPU-VALIDATION-0.4.3.md) for the processor routing A/B measurements and audio checks. Routing CPU savings ranged from inconclusive for stock main-only output to approximately 10% for all outputs; X.13 cases measured 3-7%. These figures depend on the workload and are not whole-version guarantees.
+
+## Voice JIT in 0.4.4
+
+Voice synthesis now uses native x64 JIT execution from c0remusic's DSP fork used by MD Drums. Voice blocks are limited to one DSP instruction because longer blocks produced different noise-machine output in comparison tests. This still avoids interpreting each instruction. The original firmware synthesis, master effects, control rate, voice budget, and stock/X.13 voice grouping are preserved.
+
+Common synthesis paths are compiled on the firmware loader thread before the engine becomes ready. Warm-up restores the initial voice memory and registers; it does not change the starting sound. ROM/RAM sample paths are not precompiled. Loading may take slightly longer, and previously unseen parameter-dependent code can still compile during playback.
+
+`md-jit-smoke` checks warmed JIT against the explicit interpreter at 24-bit precision, including all machines below ID 80, retriggers, pitch/tonal changes, and simultaneous tracks. See [0.4.4 CPU validation](CPU-VALIDATION-0.4.4.md) for measured plugin CPU savings and regression results. The previous source, standalone, and VST3 are preserved in `../MachineModule-backups/0.4.3-before-voice-jit`.
+
+For troubleshooting, `MACHINEMODULE_VOICE_INTERPRETER=1` before launching the standalone or DAW disables voice JIT. `MACHINEMODULE_INTERPRETER=1` separately disables master-effects JIT. Neither option is required for normal use. The new DSP fork does not provide the old JIT-failure flag; execution budgets stop a failed render instead of automatically switching the master to its interpreter.
+
 ## Build with Visual Studio 2022
 
-Requirements: **Visual Studio 2022 Desktop development with C++**, Windows SDK, Visual Studio CMake tools, and [JUCE 8.0.8](https://github.com/juce-framework/JUCE/tree/8.0.8) sources. Extract JUCE to `C:\JUCE`, or pass its location with `-JucePath`. Required emulator dependencies are vendored under `libs/`, including local changes; no submodule setup or original project folders are needed.
+Requirements: **Desktop development with C++**, Windows SDK, Visual Studio CMake tools, and JUCE sources. The local JUCE 8.0.8 installation at `C:\JUCE` was used for this build. Emulator dependencies are included under `libs/`.
 
 Either open `build/MachinedrumModulePC.sln` in VS 2022, select **Release / x64**, and build `MachinedrumModule_Standalone` and `MachinedrumModule_VST3`, or run:
 
