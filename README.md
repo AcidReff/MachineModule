@@ -1,4 +1,6 @@
 # MachineModule
+<img width="2242" height="1726" alt="image" src="https://github.com/user-attachments/assets/750d3e28-330a-4393-93cc-0916650cb107" />
+
 
 Windows x64 standalone instrument and VST3, ported from sd88me/mpc-vst-machinedrum. The Machinedrum sound engine is retained; a new JUCE desktop interface replaces the MPC wrapper. The supplied Monomodule project informed the Visual Studio/JUCE build setup. Neither original source folder is required to build this copy.
 
