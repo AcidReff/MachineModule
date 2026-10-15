@@ -19,3 +19,10 @@ CMakeUserPresets.json
 .env.*
 *.pem
 *.key
+
+/build-macos-intel/
+/build-macos-universal/
+
+.DS_Store
+/validation-macos/
+/.build-tools/

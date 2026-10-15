@@ -2,9 +2,22 @@
 <img width="2242" height="1726" alt="image" src="https://github.com/user-attachments/assets/750d3e28-330a-4393-93cc-0916650cb107" />
 
 
-Windows x64 standalone instrument and VST3, ported from sd88me/mpc-vst-machinedrum. The Machinedrum sound engine is retained; a new JUCE desktop interface replaces the MPC wrapper. The supplied Monomodule project informed the Visual Studio/JUCE build setup. Neither original source folder is required to build this copy.
+Windows x64 and macOS Universal standalone instrument and VST3, ported from sd88me/mpc-vst-machinedrum. The Machinedrum sound engine is retained; a new JUCE desktop interface replaces the MPC wrapper. The supplied Monomodule project informed the Visual Studio/JUCE build setup. Neither original source folder is required to build this copy.
 
-## Run
+## macOS (Intel + Apple Silicon)
+
+Download the macOS ZIP from [Releases](https://github.com/AcidReff/MachineModule/releases/tag/v0.4.4-macos). Requires **macOS 12.6 or later**. The ZIP contains a Universal standalone app and VST3 plugin.
+
+1. Extract the ZIP and open `Standalone/MachineModule.app`.
+2. Select **FIRMWARE** and choose your own supported Machinedrum OS `.syx` or flash `.bin`.
+3. In **Options > Audio/MIDI Settings**, select your CoreAudio output and MIDI input. Start at 44.1 kHz, 512 samples and six voices.
+4. For a DAW, copy the complete `VST3/MachineModule.vst3` bundle to `~/Library/Audio/Plug-Ins/VST3/`, then rescan plugins.
+
+The bundles are locally ad-hoc signed with the JIT entitlement and are **not notarized**. If macOS blocks the downloaded app, use **Open Anyway** in System Settings/System Preferences > Privacy & Security/Security & Privacy for this app.
+
+Intel standalone launch and OS 1.63 engine checks passed on macOS 12.6. Apple Silicon runtime, interactive audio/MIDI, and DAW hosting remain unverified. See [Mac build instructions and validation](MACOS-UNIVERSAL.md).
+
+## Windows run
 
 Open `dist/Standalone/Release/MachineModule.exe`.
 
