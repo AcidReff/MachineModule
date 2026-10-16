@@ -21,7 +21,7 @@ Build this version using [the Mac build script](MACOS-UNIVERSAL.md).
 
 ## macOS (Intel + Apple Silicon)
 
-The previously published **0.4.4** macOS ZIP is available from [Releases](https://github.com/AcidReff/MachineModule/releases/tag/v0.4.4-macos). Requires **macOS 12.6 or later**. The ZIP contains a Universal standalone app and VST3 plugin.
+Download the **0.4.5** macOS ZIP from [Releases](https://github.com/AcidReff/MachineModule/releases/tag/v0.4.5). Requires **macOS 12.0 or later**. The ZIP contains a Universal standalone app and VST3 plugin.
 
 1. Extract the ZIP and open `Standalone/MachineModule.app`.
 2. Select **FIRMWARE** and choose your own supported Machinedrum OS `.syx` or flash `.bin`.
