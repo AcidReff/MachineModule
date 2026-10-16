@@ -42,8 +42,8 @@ int main() { try {
     Rig reference, actual;
     unsigned cases=0;
     for(bool jit : {false, true}) {
-#if !defined(__x86_64__) && !defined(_M_X64)
-        if(jit) continue; // Native ARM JIT remains experimental and disabled.
+#if !defined(__x86_64__) && !defined(_M_X64) && (!defined(MACHINEMODULE_ENABLE_ARM64_JIT) || !MACHINEMODULE_ENABLE_ARM64_JIT)
+        if(jit) continue; // Interpreter-only ARM builds omit the JIT cases.
 #endif
         for(const auto* source : {"x0", "x1", "y0", "y1"})
         for(const auto* destination : {"a", "b"})

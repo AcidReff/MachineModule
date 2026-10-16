@@ -1,3 +1,30 @@
+# MachineModule 0.4.6 — macOS Universal with native ARM JIT
+
+Native Apple Silicon now enables JIT for voices and master effects by default,
+using the validated backend and the DMA/MACRI fixes from 0.4.5. Intel keeps JIT.
+The app and VST3 remain Universal, targeting macOS 12.0 and later. Plugin IDs,
+parameters and saved project format are unchanged.
+
+The ARM JIT candidate passed 18 final automated checks on Apple M1, including
+39,029,760 matching voice samples across OS 1.63 and X.13, five-minute renders
+matching the interpreter, master references, X.13 expansions, processor routing,
+MIDI and state restore. The user reports approximately 25% lower Ableton CPU
+with the JIT candidate; this is not a controlled benchmark. See
+ARM-JIT-VALIDATION-0.4.6.md for release checks and remaining limits.
+
+The MIDI regression now distinguishes stock OS 1.63's channel mapping from
+X.13's tonal transposition, and the MACRI regression covers native ARM JIT.
+
+The 0.4.5 release and its source remain available as an interpreter-default
+fallback. Build with `MACHINEMODULE_ENABLE_ARM64_JIT=OFF bash build-macos.sh /path/to/JUCE`
+for that execution mode, or use the existing runtime interpreter overrides.
+
+Locally ad-hoc signed, not notarized. Firmware and samples are user-supplied.
+Mac binaries are included; Windows binaries have not been rebuilt for 0.4.6.
+AGPL-3.0-only; see LICENSE and THIRD_PARTY_NOTICES.md.
+
+---
+
 # MachineModule 0.4.5 - Apple Silicon stability candidate
 
 Native Apple Silicon defaults to original firmware interpreter execution for both voices and master effects, including DSP internal dispatch. This bypasses the unvalidated ARM JIT after an OS 1.63 freeze report on M2 Pro. Native testing subsequently identified and fixed a mixer DMA interrupt-queue stall; see the validation report below. CPU use can increase. Intel and Windows keep their existing JIT behavior.

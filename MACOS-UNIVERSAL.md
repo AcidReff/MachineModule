@@ -5,15 +5,11 @@ standalone `.app` and one VST3 bundle. You can build both architectures on your
 Intel Mac. macOS selects the native architecture when launching the result.
 See [Apple's Universal binary guide](https://developer.apple.com/documentation/apple-silicon/building-a-universal-macos-binary).
 
-Version 0.4.5 defaults to the firmware interpreter for BOTH voices and original
-master effects on native Apple Silicon. A user reported OS 1.63 playing briefly
-then freezing on an M2 Pro in both standalone and VST3. ARM JIT is a suspect,
-not a confirmed root cause; this build bypasses that unvalidated path for testing.
-Intel Macs and Windows retain their existing JIT behavior. CPU use on Apple
-Silicon can be higher. Native testing fixed a mixer DMA interrupt-queue stall,
-and X.13 testing added missing MACRI support in both DSP backends. See
-[completed runtime validation](NATIVE-VALIDATION-2026-10-16.md) and
-[Apple Silicon hang diagnostics](APPLE-SILICON-STABILITY.md).
+Version 0.4.6 enables native JIT for voices and original master effects on
+Apple Silicon and Intel. The earlier DMA interrupt-queue and MACRI fixes remain
+included. See [ARM JIT validation](ARM-JIT-VALIDATION-0.4.6.md) for automated
+results and the user's Ableton observation. Version 0.4.5 and its source remain
+available as the interpreter-default Apple Silicon fallback.
 
 ## Set up your Intel Mac
 
@@ -59,7 +55,8 @@ CMAKE_OSX_DEPLOYMENT_TARGET=12.0
 ```
 
 A separate `build-macos-universal` cache avoids reusing the old Intel-only cache.
-The script explicitly sets `MACHINEMODULE_ENABLE_ARM64_JIT=OFF` for stability.
+The script defaults to `MACHINEMODULE_ENABLE_ARM64_JIT=ON`. To build the interpreter
+fallback, run `MACHINEMODULE_ENABLE_ARM64_JIT=OFF bash build-macos.sh /path/to/JUCE`.
 Both architecture-specific DSP backends are included in the dependency source.
 The script applies local ad-hoc signatures with the JIT entitlement, checks code
 signatures, and verifies both architectures using `lipo` before packaging.
@@ -116,8 +113,8 @@ arch -arm64 ./build-macos-universal/Release/md-stability-smoke "$FIRMWARE" 60
 arch -arm64 ./build-macos-universal/Release/md-master-probe "$FIRMWARE"
 ```
 
-`md-jit-smoke` returns 77 / SKIP in the default ARM64 interpreter build; this is
-expected and does not validate ARM JIT. It is not possible to run the ARM64 checks
+`md-jit-smoke` now exercises ARM JIT in the default build. It returns 77 / SKIP
+only when interpreter mode is selected by build options or environment overrides. It is not possible to run the ARM64 checks
 on Intel. Native ARM64 checks passed for OS 1.63 and X.13; see the runtime validation report.
 Also test native standalone sound, original master effects, Chromatic MIDI and
 VST3 project save/restore on each architecture. Firmware and samples are supplied

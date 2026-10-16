@@ -4,24 +4,21 @@
 
 Windows x64 and macOS Universal standalone instrument and VST3, ported from sd88me/mpc-vst-machinedrum. The Machinedrum sound engine is retained; a new JUCE desktop interface replaces the MPC wrapper. The supplied Monomodule project informed the Visual Studio/JUCE build setup. Neither original source folder is required to build this copy.
 
-## Version 0.4.5 source update
+## Version 0.4.6 — native Apple Silicon JIT
 
-The Universal Mac build contains native Apple Silicon and Intel code. Apple Silicon
-uses the firmware interpreter by default; experimental ARM JIT remains disabled.
-This update fixes a master-effect DMA interrupt-queue stall and implements the
-MACRI DSP instruction used by an X.13 neighbor effect in both interpreter and JIT.
+The Universal Mac build enables native JIT for voices and master effects on both
+Apple Silicon and Intel. Native ARM JIT passed automated audio comparisons,
+five-minute renders, master effects, X.13 expansions, routing, MIDI and state tests
+on Apple M1. The user reports about 25% lower CPU use in Ableton for the JIT
+candidate; this is a user observation, not a controlled benchmark.
 
-OS 1.63 and X.13 each passed 60-second native Apple Silicon and Intel-via-Rosetta
-checks with matching audio hashes. X.13 expansion checks passed on both paths.
-The user also tested both firmware versions in Ableton before the final MACRI fix;
-DAW retesting of that fix and native Intel hardware testing remain pending.
-See [runtime validation](NATIVE-VALIDATION-2026-10-16.md) and
-[DSP read investigation](DSP-READ-INVESTIGATION-2026-10-16.md).
-Build this version using [the Mac build script](MACOS-UNIVERSAL.md).
+Version 0.4.5 remains available as the interpreter-default Apple Silicon fallback.
+See [0.4.6 validation](ARM-JIT-VALIDATION-0.4.6.md) and
+[Mac build instructions](MACOS-UNIVERSAL.md).
 
 ## macOS (Intel + Apple Silicon)
 
-Download the **0.4.5** macOS ZIP from [Releases](https://github.com/AcidReff/MachineModule/releases/tag/v0.4.5). Requires **macOS 12.0 or later**. The ZIP contains a Universal standalone app and VST3 plugin.
+Download the **0.4.6** macOS ZIP from [Releases](https://github.com/AcidReff/MachineModule/releases/tag/v0.4.6). Requires **macOS 12.0 or later**. The ZIP contains a Universal standalone app and VST3 plugin.
 
 1. Extract the ZIP and open `Standalone/MachineModule.app`.
 2. Select **FIRMWARE** and choose your own supported Machinedrum OS `.syx` or flash `.bin`.
@@ -30,7 +27,7 @@ Download the **0.4.5** macOS ZIP from [Releases](https://github.com/AcidReff/Mac
 
 The bundles are locally ad-hoc signed with the JIT entitlement and are **not notarized**. If macOS blocks the downloaded app, use **Open Anyway** in System Settings/System Preferences > Privacy & Security/Security & Privacy for this app.
 
-For 0.4.4, Intel standalone launch and OS 1.63 engine checks passed on macOS 12.6. For current 0.4.5 validation, see the report above and [Mac build instructions](MACOS-UNIVERSAL.md).
+For 0.4.6 validation and its limits, see the report above. Native Intel hardware was not retested for this release. The earlier 0.4.4 Intel validation on macOS 12.6 remains recorded in the release history.
 
 ## Windows run
 

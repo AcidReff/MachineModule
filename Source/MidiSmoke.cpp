@@ -2,6 +2,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <cmath>
+#include "FirmwareLoader.h"
 extern juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter();
 using namespace juce;
 static void require(bool ok,const char* message){if(!ok)throw std::runtime_error(message);}
@@ -9,6 +10,7 @@ int main(int argc,char** argv) {
     ScopedJuceInitialiser_GUI init;
     try {
         if(argc<2)return 2;
+        const bool supportsTransposition=pc::loadFirmware(argv[1]).firmware.x13;
         std::unique_ptr<AudioProcessor> p(createPluginFilter());
         auto layout=p->getBusesLayout();for(int i=0;i<layout.outputBuses.size();++i)layout.outputBuses.set(i,i<3?AudioChannelSet::stereo():AudioChannelSet::mono());
         require(p->setBusesLayout(layout),"Could not enable all outputs");p->prepareToPlay(44100,512);
@@ -31,7 +33,12 @@ int main(int argc,char** argv) {
         auto frequency=[&](int note){silence();midi.addEvent(MidiMessage::noteOn(1,note,(uint8)110),0);render(3);int crossings=0;float previous=audio.getSample(6,511);for(int b=0;b<32;++b){render(1);for(int s=0;s<512;++s){float v=audio.getSample(6,s);if(previous<=0&&v>0)++crossings;previous=v;}}return crossings*44100.0/(32*512);};
         const double low=frequency(60),high=frequency(72);
         std::cout<<"Octave test: "<<low<<" Hz -> "<<high<<" Hz\n";
-        require(low>10&&std::abs(high/low-2.0)<0.08,"MIDI octave did not double pitch");
+        require(low>10,"MIDI reference note was silent");
+        if(supportsTransposition)
+            require(std::abs(high/low-2.0)<0.08,"X.13 MIDI octave did not double pitch");
+        else
+            require(std::abs(high-low)<44100.0/(32*512)+0.01,"Stock firmware unexpectedly transposed pitch");
+        std::cout<<(supportsTransposition?"X.13 octave transposition passed":"Stock firmware channel mapping without transposition passed")<<std::endl;
         require(raw("t1_p0")==64&&raw("t1_tonal")==0,"MIDI overwrote saved base pitch or tuning flag");
         silence();midi.addEvent(MidiMessage::noteOn(1,60,(uint8)110),0);midi.addEvent(MidiMessage::noteOn(2,60,(uint8)110),0);render(4);
         midi.addEvent(MidiMessage::allSoundOff(1),0);render(8);

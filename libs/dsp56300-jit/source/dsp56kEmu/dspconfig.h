@@ -2,8 +2,8 @@
 
 #include "dsp56kBase/buildconfig.h"
 
-// MachineModule: disable every internal JIT dispatch on native Apple Silicon,
-// including interrupt paths. ARM64 JIT playback hangs are under investigation.
+// MachineModule: explicit interpreter builds also disable internal JIT dispatch
+// on native Apple Silicon, including interrupt paths.
 #if defined(__APPLE__) && defined(HAVE_ARM64)
 #if !defined(MACHINEMODULE_ENABLE_ARM64_JIT) || !MACHINEMODULE_ENABLE_ARM64_JIT
 #ifndef DSP56K_FORCE_INTERPRETER
