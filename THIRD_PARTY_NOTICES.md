@@ -8,6 +8,10 @@
 
 The new PC wrapper, loader adapters, build files and tests are supplied under AGPL-3.0-only. Elektron's firmware remains user-supplied and is neither embedded nor copied into the distribution folder.
 
+Version 0.4.5 locally changes `libs/dsp56300-jit/source/dsp56kEmu/dspconfig.h` to
+select the firmware interpreter on native Apple Silicon unless experimental ARM64
+JIT is explicitly enabled. Existing source copyright and GPL notices are retained.
+
 Version 0.4.3 additionally changes dsp56300's `DSP::execInterpreter` to avoid an indirect peripheral callback before its scheduled clock, while preserving interrupt dispatch and the original due-peripheral path. The source retains the upstream license and notices.
 
 - **c0remusic/dsp56300-md-mm** - https://github.com/c0remusic/dsp56300-md-mm - GPL-3.0; commit f84b5b6c01fc7e4e74bdd9a54087f0fc4c6b08d7. Version 0.4.4 compiles the vendored dsp56kBase, dsp56kEmu and vtuneSdk directories in libs/dsp56300-jit, with the same pinned asmjit above. Upstream source and license notices are retained.

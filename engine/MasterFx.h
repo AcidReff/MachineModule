@@ -23,7 +23,7 @@ public:
         : cpu(os),dsp(fw,useJit && std::getenv("MACHINEMODULE_INTERPRETER")==nullptr) {
         // Firmware loading runs on a background thread. Exercise the common
         // master branches there so their initial JIT compilation precedes audio.
-        if(useJit && std::getenv("MACHINEMODULE_INTERPRETER")==nullptr) {
+        if(dsp.usingJit()) {
             for(int variant=0;variant<8;++variant) {
                 auto p=defaults;
                 p[8]=uint8_t(variant*18);p[9]=uint8_t(variant*16);
@@ -41,6 +41,7 @@ public:
         }
     }
     void reset(){dsp.resetMaster();valid=false;}
+    bool usingJit() const { return dsp.usingJit(); }
     bool configure(const std::array<uint8_t,32>& params,double bpm) {
         if(valid && params==last && bpm==lastTempo)return true;
         if(!cpu.computeMaster(params,bpm))return false;

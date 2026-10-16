@@ -204,7 +204,7 @@ namespace dsp56k
 		template<Instruction Inst, bool Accumulate, bool Round> void op_Mac_S(TWord op);
 		void op_Maci_xxxx(TWord op);
 		void op_Macr_S1S2(TWord op)		{ alu_multiply(op); }
-		void op_Macri_xxxx(TWord op)	{ errNotImplemented(op); }
+		void op_Macri_xxxx(TWord op);
 		void op_Max(TWord op);
 		void op_Maxm(TWord op);
 		void op_Merge(TWord op);

@@ -1,6 +1,7 @@
 // Harness structure adapted from shnolk/monomodule src/core/dsp/DspEngine.cpp (AGPL-3.0).
 #include "VoiceEngine.h"
 #include "MachineRunner.h"
+#include "DspExecutionPolicy.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -48,7 +49,7 @@ namespace md::engine
 		constexpr uint64_t kMaxInstrBlock = 20'000'000;
 	}
 
-	VoiceEngine::VoiceEngine(const fw::Firmware& _fw, bool useJit) : m_fw(_fw), m_useJit(useJit && std::getenv("MACHINEMODULE_VOICE_INTERPRETER")==nullptr)
+	VoiceEngine::VoiceEngine(const fw::Firmware& _fw, bool useJit) : m_fw(_fw), m_useJit(useJit && platformAllowsJit() && std::getenv("MACHINEMODULE_VOICE_INTERPRETER")==nullptr)
 	{
 		m_validator = std::make_unique<DefaultMemoryValidator>();
 		m_mem = std::make_unique<Memory>(*m_validator, kSizeP, kSizeXY, kBridge);

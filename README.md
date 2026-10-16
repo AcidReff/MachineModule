@@ -4,9 +4,24 @@
 
 Windows x64 and macOS Universal standalone instrument and VST3, ported from sd88me/mpc-vst-machinedrum. The Machinedrum sound engine is retained; a new JUCE desktop interface replaces the MPC wrapper. The supplied Monomodule project informed the Visual Studio/JUCE build setup. Neither original source folder is required to build this copy.
 
+## Version 0.4.5 source update
+
+The Universal Mac build contains native Apple Silicon and Intel code. Apple Silicon
+uses the firmware interpreter by default; experimental ARM JIT remains disabled.
+This update fixes a master-effect DMA interrupt-queue stall and implements the
+MACRI DSP instruction used by an X.13 neighbor effect in both interpreter and JIT.
+
+OS 1.63 and X.13 each passed 60-second native Apple Silicon and Intel-via-Rosetta
+checks with matching audio hashes. X.13 expansion checks passed on both paths.
+The user also tested both firmware versions in Ableton before the final MACRI fix;
+DAW retesting of that fix and native Intel hardware testing remain pending.
+See [runtime validation](NATIVE-VALIDATION-2026-10-16.md) and
+[DSP read investigation](DSP-READ-INVESTIGATION-2026-10-16.md).
+Build this version using [the Mac build script](MACOS-UNIVERSAL.md).
+
 ## macOS (Intel + Apple Silicon)
 
-Download the macOS ZIP from [Releases](https://github.com/AcidReff/MachineModule/releases/tag/v0.4.4-macos). Requires **macOS 12.6 or later**. The ZIP contains a Universal standalone app and VST3 plugin.
+The previously published **0.4.4** macOS ZIP is available from [Releases](https://github.com/AcidReff/MachineModule/releases/tag/v0.4.4-macos). Requires **macOS 12.6 or later**. The ZIP contains a Universal standalone app and VST3 plugin.
 
 1. Extract the ZIP and open `Standalone/MachineModule.app`.
 2. Select **FIRMWARE** and choose your own supported Machinedrum OS `.syx` or flash `.bin`.
@@ -15,7 +30,7 @@ Download the macOS ZIP from [Releases](https://github.com/AcidReff/MachineModule
 
 The bundles are locally ad-hoc signed with the JIT entitlement and are **not notarized**. If macOS blocks the downloaded app, use **Open Anyway** in System Settings/System Preferences > Privacy & Security/Security & Privacy for this app.
 
-Intel standalone launch and OS 1.63 engine checks passed on macOS 12.6. Apple Silicon runtime, interactive audio/MIDI, and DAW hosting remain unverified. See [Mac build instructions and validation](MACOS-UNIVERSAL.md).
+For 0.4.4, Intel standalone launch and OS 1.63 engine checks passed on macOS 12.6. For current 0.4.5 validation, see the report above and [Mac build instructions](MACOS-UNIVERSAL.md).
 
 ## Windows run
 

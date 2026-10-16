@@ -1,4 +1,5 @@
 #include "MixerRef.h"
+#include "../../engine/DspExecutionPolicy.h"
 
 #include <sstream>
 #include <stdexcept>
@@ -30,6 +31,7 @@ namespace md::mixref
 
 	MixerRef::MixerRef(const fw::Firmware& _fw, bool useJit)
 	{
+		useJit = useJit && g_useJIT && md::engine::platformAllowsJit();
 		m_validator = std::make_unique<DefaultMemoryValidator>();
 		m_mem = std::make_unique<Memory>(*m_validator, kSizeP, kSizeXY, kBridge);
 		m_periphX = std::make_unique<Peripherals56303>();
@@ -61,6 +63,11 @@ namespace md::mixref
 		m_dsp->setPC(kEntry);
 		if(!runUntil(kAfterInit, 100'000'000))
 			throw std::runtime_error("mixer DSP init did not complete: " + m_fault);
+		// The host supplies blocks directly to the mixer routines. The firmware's
+		// serial-link DMA is unused here; leaving it enabled queues masked DMA
+		// interrupts until the interpreter blocks on its own full interrupt queue.
+		for(int channel = 0; channel < 6; ++channel)
+			m_periphX->write(XIO_DCR0 - 4 * channel, 0);
 		for(uint32_t a=0;a<0x800;++a) {m_initialX.push_back(peekX(a));m_initialY.push_back(peekY(a));}
 		for(uint32_t a=0x100000;a<0x148000;++a) m_initialExternal.push_back(m_mem->get(MemArea_P,a));
 		if(useJit) {

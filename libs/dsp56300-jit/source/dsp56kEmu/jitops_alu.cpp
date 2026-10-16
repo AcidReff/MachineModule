@@ -1149,6 +1149,18 @@ namespace dsp56k
 		alu_mpy(ab, reg, s, negate, true, false, false, false);
 	}
 
+	void JitOps::op_Macri_xxxx(TWord op)
+	{
+		const bool ab = getFieldValue<Macri_xxxx, Field_d>(op);
+		const bool negate = getFieldValue<Macri_xxxx, Field_k>(op);
+		const TWord qq = getFieldValue<Macri_xxxx, Field_qq>(op);
+		DspValue immediate(m_block);
+		getSignedOpWordB(immediate);
+		DspValue reg(m_block);
+		decode_qq_read(reg, qq, true);
+		alu_mpy(ab, reg, immediate, negate, true, false, false, true);
+	}
+
 	void JitOps::op_Mpyi(TWord op)
 	{
 		const bool	ab = getFieldValue<Mpyi, Field_d>(op);

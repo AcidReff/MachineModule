@@ -31,14 +31,15 @@ trap 'echo "Build failed. See macos-universal-build.log in the source folder." >
 cmake -S "$project_dir" -B "$build_dir" -G Xcode \
     "-DJUCE_DIR=$juce_dir" \
     "-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64" \
-    -DCMAKE_OSX_DEPLOYMENT_TARGET=12.6 \
+    "-DCMAKE_OSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET:-12.0}" \
     -DCMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH=NO \
     -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
+    -DMACHINEMODULE_ENABLE_ARM64_JIT=OFF \
     -DBUILD_TESTING=OFF
 
 cmake --build "$build_dir" --config Release --parallel 4 \
     --target MachinedrumModule_Standalone MachinedrumModule_VST3 \
-             md-smoke md-jit-smoke md-master-probe md-lfo-smoke md-x13-smoke
+             md-smoke md-jit-smoke md-master-probe md-lfo-smoke md-x13-smoke md-stability-smoke md-macri-smoke
 
 products="$build_dir/MachinedrumModule_artefacts/Release"
 app="$products/Standalone/MachineModule.app"
@@ -60,7 +61,7 @@ sign_and_verify() {
 }
 sign_and_verify "$app" "$app/Contents/MacOS/MachineModule"
 sign_and_verify "$plugin" "$plugin/Contents/MacOS/MachineModule"
-for tool in md-smoke md-jit-smoke md-master-probe md-lfo-smoke md-x13-smoke; do
+for tool in md-smoke md-jit-smoke md-master-probe md-lfo-smoke md-x13-smoke md-stability-smoke md-macri-smoke; do
     sign_and_verify "$build_dir/Release/$tool" "$build_dir/Release/$tool"
 done
 mkdir -p "$output_dir/Standalone" "$output_dir/VST3"

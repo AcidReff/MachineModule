@@ -1,3 +1,28 @@
+# MachineModule 0.4.5 - Apple Silicon stability candidate
+
+Native Apple Silicon defaults to original firmware interpreter execution for both voices and master effects, including DSP internal dispatch. This bypasses the unvalidated ARM JIT after an OS 1.63 freeze report on M2 Pro. Native testing subsequently identified and fixed a mixer DMA interrupt-queue stall; see the validation report below. CPU use can increase. Intel and Windows keep their existing JIT behavior.
+
+Universal builds still contain x86_64 and arm64. The Mac script defaults to a macOS 12.0 deployment target for the user's Intel macOS 12.6 setup. Original firmware effects, plugin IDs, saved parameters and output layout are preserved.
+
+See APPLE-SILICON-STABILITY.md for testing the existing app without rebuilding, applying the focused patch to an existing Mac repository, building the complete source and collecting a hang sample. See ARM-STABILITY-VALIDATION-0.4.5.md for completed Windows regression/interpreter checks and the later native validation in NATIVE-VALIDATION-2026-10-16.md.
+
+## Local Mac validation and fixes — 2026-10-16
+
+The mixer now disables unused serial-link DMA after firmware initialization,
+preventing a full interrupt queue from stalling direct master-effect execution.
+X.13 testing also exposed unimplemented MACRI instructions in a neighbor effect.
+Both interpreter and JIT now implement multiply-accumulate immediate with rounding.
+The new `md-macri-smoke` compares accumulator values, status flags and instruction
+length against MACI followed by RND across registers, signs and boundary values.
+X.13's affected neighbor effect now renders without unsupported-instruction messages.
+
+The source archive contains source only; the separate macOS Universal ZIP contains
+the locally ad-hoc signed standalone and VST3. See NATIVE-VALIDATION-2026-10-16.md
+and DSP-READ-INVESTIGATION-2026-10-16.md for results and remaining limits.
+Firmware and samples are user-supplied. AGPL-3.0-only; see LICENSE and THIRD_PARTY_NOTICES.md.
+
+---
+
 # MachineModule 0.4.4 — macOS Universal
 
 Standalone app and VST3 for Intel (`x86_64`) and Apple Silicon (`arm64`), requiring macOS 12.6 or later. This release adds the Mac build of 0.4.4; the synthesis code, plugin IDs and state format are unchanged.

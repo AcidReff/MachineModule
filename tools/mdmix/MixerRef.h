@@ -47,6 +47,7 @@ namespace md::mixref
 		void pokeY(uint32_t _a, uint32_t _v);
 		uint64_t instructionsLastRun() const { return m_lastInstructions; }
 		const std::string& fault() const { return m_fault; }
+		bool usingJit() const { return m_useJit; }
 		dsp56k::DSP& dsp() { return *m_dsp; }
 
 	private:

@@ -52,6 +52,7 @@ namespace md::engine
 		bool timingOn = false;
 		std::vector<double> groupUs, groupVoices;
 		int groupCount() const { return static_cast<int>(m_groups.size()); }
+		bool usingJit() const { return m_groups.front()->usingJit(); }
 		int groupOf(int _voice) const { return m_map[static_cast<size_t>(_voice)]; }
 
 		// Move a voice to another group (call between blocks, from the thread that calls renderBlock). The old group's

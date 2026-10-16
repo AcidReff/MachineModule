@@ -1087,7 +1087,12 @@ namespace dsp56k
 	}
 	inline void DSP::op_Macri_xxxx(const TWord op)
 	{
-		errNotImplemented("MACRI");		
+		const bool ab = getFieldValue<Macri_xxxx,Field_d>(op);
+		const bool negate = getFieldValue<Macri_xxxx,Field_k>(op);
+		const TWord qq = getFieldValue<Macri_xxxx,Field_qq>(op);
+		const TReg24 immediate(immediateDataExt<Macri_xxxx>());
+		alu_mpy(ab, decode_qq_read(qq), immediate, negate, true);
+		alu_rnd(ab);
 	}
 	inline void DSP::op_Max(const TWord op)
 	{

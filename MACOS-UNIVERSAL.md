@@ -5,20 +5,20 @@ standalone `.app` and one VST3 bundle. You can build both architectures on your
 Intel Mac. macOS selects the native architecture when launching the result.
 See [Apple's Universal binary guide](https://developer.apple.com/documentation/apple-silicon/building-a-universal-macos-binary).
 
-Both architecture slices compiled successfully with Xcode 14.2, CMake 3.31.6 and
-JUCE 8.0.8. The standalone launched on an Intel Mac running macOS 12.6.
-With user-supplied OS 1.63, all four Intel engine checks passed: 47 machines
-produced audio; JIT matched the interpreter for 18,631,680 24-bit track samples;
-original master effects and random LFO checks passed. Both bundle signatures
-passed strict verification. Both slices specify macOS 12.6 as their minimum.
+Version 0.4.5 defaults to the firmware interpreter for BOTH voices and original
+master effects on native Apple Silicon. A user reported OS 1.63 playing briefly
+then freezing on an M2 Pro in both standalone and VST3. ARM JIT is a suspect,
+not a confirmed root cause; this build bypasses that unvalidated path for testing.
+Intel Macs and Windows retain their existing JIT behavior. CPU use on Apple
+Silicon can be higher. Native testing fixed a mixer DMA interrupt-queue stall,
+and X.13 testing added missing MACRI support in both DSP backends. See
+[completed runtime validation](NATIVE-VALIDATION-2026-10-16.md) and
+[Apple Silicon hang diagnostics](APPLE-SILICON-STABILITY.md).
 
-Apple Silicon runtime, interactive CoreAudio/MIDI and DAW hosting remain
-unverified. An M-series Mac is needed to test the ARM64 slice and its DSP JIT.
-These checks do not establish that every DAW or audio device works.
+## Set up your Intel Mac
 
-## Mac build prerequisites
-
-1. The app targets macOS **12.6 or later**. The local build uses **Xcode 14.2** on macOS 12.6. Download a compatible Xcode from
+1. For your **macOS Monterey 12.6** Intel Mac, use **Xcode 14.2**. For Ventura
+   13.5 or later, Xcode 15.2 is an option. Download Xcode from
    [Apple Developer Downloads](https://developer.apple.com/download/all/), place
    it in Applications and open it once to install its components. Check
    [Apple's Xcode requirements](https://developer.apple.com/xcode/system-requirements)
@@ -43,8 +43,8 @@ Skip the clone if you already have JUCE 8.0.8. Pass its actual folder to the scr
 
 ## Build the app and VST3
 
-Copy and extract `MachineModule-Mac-Universal-Source.zip` onto your Mac. Open
-Terminal in the extracted source folder containing `build-macos.sh`, then run:
+Clone this repository or extract the source archive onto your Mac. Open
+Terminal in the source folder containing `build-macos.sh`, then run:
 
 ```bash
 bash build-macos.sh "$HOME/Developer/JUCE"
@@ -55,10 +55,11 @@ The script uses:
 ```text
 CMAKE_OSX_ARCHITECTURES=x86_64;arm64
 CMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH=NO
-CMAKE_OSX_DEPLOYMENT_TARGET=12.6
+CMAKE_OSX_DEPLOYMENT_TARGET=12.0
 ```
 
 A separate `build-macos-universal` cache avoids reusing the old Intel-only cache.
+The script explicitly sets `MACHINEMODULE_ENABLE_ARM64_JIT=OFF` for stability.
 Both architecture-specific DSP backends are included in the dependency source.
 The script applies local ad-hoc signatures with the JIT entitlement, checks code
 signatures, and verifies both architectures using `lipo` before packaging.
@@ -108,8 +109,16 @@ arch -x86_64 ./build-macos-universal/Release/md-x13-smoke "$FIRMWARE"
 ```
 
 On an **M-series Mac**, copy the source/build folder with the Universal tools and
-run the same commands with `arch -arm64` instead. `md-jit-smoke` must report exact
-JIT/interpreter matches. It is not possible to run the ARM64 checks on Intel.
+run `md-stability-smoke` and `md-master-probe` with `arch -arm64` instead. For example:
+
+```bash
+arch -arm64 ./build-macos-universal/Release/md-stability-smoke "$FIRMWARE" 60
+arch -arm64 ./build-macos-universal/Release/md-master-probe "$FIRMWARE"
+```
+
+`md-jit-smoke` returns 77 / SKIP in the default ARM64 interpreter build; this is
+expected and does not validate ARM JIT. It is not possible to run the ARM64 checks
+on Intel. Native ARM64 checks passed for OS 1.63 and X.13; see the runtime validation report.
 Also test native standalone sound, original master effects, Chromatic MIDI and
 VST3 project save/restore on each architecture. Firmware and samples are supplied
 by the user and are not distributed with this source package.
@@ -117,3 +126,10 @@ by the user and are not distributed with this source package.
 If a Mac build fails, send `macos-universal-build.log`. If a check fails, send its
 terminal output and the Mac architecture. Do not treat a successful compilation
 alone as proof that ARM64 synthesis is correct.
+
+## Backup
+
+The prior Universal preparation, source, Windows standalone and complete VST3 are
+preserved together in `../MachineModule-backups/0.4.4-before-apple-silicon-stability`.
+External JUCE for the Windows build was `C:/JUCE` 8.0.8. Plugin IDs, parameters,
+output layout and firmware handling are preserved.

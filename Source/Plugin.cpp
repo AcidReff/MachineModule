@@ -6,6 +6,7 @@
 #include "MasterFx.h"
 #include "MidiMapping.h"
 #include <condition_variable>
+#include <cstdio>
 #include <thread>
 
 using namespace juce;
@@ -253,6 +254,9 @@ private:
                 auto freshEffects=std::make_unique<md::engine::MasterFx>(fw.firmware,fw.os);
                 auto fresh=std::make_unique<md::engine::ParallelEngine>(fw.firmware,fw.os,fw.firmware.x13?1:3);
                 fresh->voices().warmUp(fw.os);
+                std::fprintf(stderr,"MachineModule DSP: voices=%s master=%s groups=%d\n",
+                    fresh->voices().usingJit()?"JIT":"interpreter",
+                    freshEffects->usingJit()?"JIT":"interpreter",fresh->voices().groupCount());
                 const bool rom=pc::loadSamples(fresh->voices(),std::filesystem::path(path.toWideCharPointer()).parent_path()/"ROM_SAMPLES.bin");
                 auto list=fresh->os().machines();
                 if(!preserveParameters.exchange(true)) {

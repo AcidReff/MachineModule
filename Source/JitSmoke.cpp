@@ -6,6 +6,10 @@ int main(int argc,char** argv) { try {
     if(argc!=2) return 2;
     auto fw=pc::loadFirmware(argv[1]);
     md::engine::Engine reference(fw.firmware,fw.os,false), fast(fw.firmware,fw.os,true);
+    if(!fast.voices().usingJit()) {
+        std::cout<<"SKIP: JIT is disabled by platform policy or environment; use md-stability-smoke for interpreter playback checks."<<std::endl;
+        return 77;
+    }
     fast.voices().warmUp(fw.os);
     uint64_t samples=0;
     auto compare=[&](int id,int block) {

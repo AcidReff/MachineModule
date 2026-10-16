@@ -52,6 +52,7 @@ namespace md::engine
 		uint32_t voiceInstructions(int _voice) const { return m_voiceInstr[static_cast<size_t>(_voice)]; }	// DSP instructions the voice used in the last block
 		int activeVoicesLastBlock() const { return m_lastActive; }	// voices that rendered (flag 1) in the last block
 		const std::string& faultReason() const { return m_fault; }
+		bool usingJit() const { return m_useJit; }
 		dsp56k::DSP& dsp() { return *m_dsp; }
 
 	private:
